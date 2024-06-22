@@ -1,9 +1,10 @@
 #INFO
 ########################################################################################################
 #
-# Intra-couple health concordances among Hungarian couples
-# R-Code: Zoltan Brys, Gergely Tóth, Gergely Rosta
+# R-syntax for the manuscript titled
 #
+# Intra-couple health concordances in cohabiting couples:
+# results from a Hungarian cross-sectional study
 #
 ########################################################################################################
 
@@ -186,13 +187,26 @@ conc_mes <- function (x, y, nas = TRUE, z=2.576)
   n= length(x)
 
   #independent probability for concordance - random matching
-  pivc = (sum(x==1) / n) * (sum(y==1) / n) + (sum(x==0) / n) * (sum(y==0) / n)
+  #pivc = (sum(x==1) / n) * (sum(y==1) / n) + (sum(x==0) / n) * (sum(y==0) / n)
+  #tmp_ip_c = one_z(pivc, (2*n) ) #99% CI for probability of concordance w def z
+  #icp  =  tmp_ip_c$p  #indepedent concordance p 
+  #icpl =  tmp_ip_c$pl #indepedent concordance p low
+  #icph =  tmp_ip_c$ph #indepedent concordance p high
   
-  tmp_ip_c = one_z(pivc, (2*n) ) #99% CI for probability of concordance w def z
+  #indep random k=50 000 rematching
+  aranyok <- NULL
+  for (i in 1:50000) {
+    x2 <- sample(x)
+    y2 <- sample(y)
+    c11 <- sum(x2 == 1 & y2 == 1)
+    c00 <- sum(x2 == 0 & y2 == 0)
+    aranyok <- c(aranyok, ((c11+c00) / n))
+  }
+  pivc = mean(aranyok)
   
-  icp  =  tmp_ip_c$p  #indepedent concordance p 
-  icpl =  tmp_ip_c$pl #indepedent concordance p low
-  icph =  tmp_ip_c$ph #indepedent concordance p high
+  icp = pivc
+  icpl = sort(aranyok)[c(length(aranyok)*0.005)]
+  icph = sort(aranyok)[c(length(aranyok)*0.995)]
 
   #obsereved concordance
   c11 = sum(x == 1 & y == 1)
@@ -215,7 +229,6 @@ conc_mes <- function (x, y, nas = TRUE, z=2.576)
   ch  =  tmp_two_zh$ch
   chl =  tmp_two_zh$chl
   chh =  tmp_two_zh$chh
-  
   
   res_df = data.frame(icp, icpl, icph, ocp, ocpl, ocph, dp, dpl, dph, ch, chl, chh)
     #icp = independent concordance
@@ -473,7 +486,7 @@ for (col in cols_fac) {
 # DESCRIPTIVE VARIABLES
 #######################################################################################################
 # x1 = sum age of the couple
-  pc$x1 <- (2023 - pc$szulev) + (2023- pc$P2)
+  pc$x1 <- (2022 - pc$szulev) + (2022- pc$P2)
   attr(pc$x1, "label") <- "Sum ages of the couple (in years)"
 # x2 = difference of ages
   pc$x2 <- abs((2023 - pc$szulev) - (2023- pc$P2))
@@ -526,23 +539,55 @@ for (col in cols_fac) {
 
 # TABLE1 - Characteristics of the sample
 #######################################################################################################
+
+#adding ratio of concordant couples
+pc$con_hb1 = as.numeric(pc$rhb1 == pc$phb1)
+pc$con_hb2 = as.numeric(pc$rhb2 == pc$phb2)
+pc$con_hb3 = as.numeric(pc$rhb3 == pc$phb3)
+pc$con_hb4 = as.numeric(pc$rhb4 == pc$phb4)
+pc$con_hb5 = as.numeric(pc$rhb5 == pc$phb5)
+pc$con_hb6 = as.numeric(pc$rhb6 == pc$phb6)
+pc$con_hb7 = as.numeric(pc$rhb7 == pc$phb7)
+
+#labels
+attr(pc$con_hb1, "label")  <- "Concordance in Tobacco use"
+attr(pc$con_hb2, "label")  <- "Concordance in Covid-19 vaccination uptake"
+attr(pc$con_hb3, "label")  <- "Concordance in Flu vaccination uptake"
+attr(pc$con_hb4, "label")  <- "Concordance in Vegetable consumption"
+attr(pc$con_hb5, "label")  <- "Concordance in Physical excercise"
+attr(pc$con_hb6, "label")  <- "Concordance in Sleep problems"
+attr(pc$con_hb7, "label")  <- "Concordance in Hypothetical vaccination uptake intention"
   
 #labels defined for tbl_sum
-  flabels <- list(x1 ~ "Sum ages of the couple (in years)",
-                  x2 ~ "Difference of partners' ages (in years)",
-                  x3 ~ "Sum education of the couple (2-14)",
-                  x4 ~ "Difference of education of the partners (0-6)",
-                  x5 ~ "Number of minors living with the couple (0- )",
-                  x6 ~ "Financial status of the couple (1-5)",
-                  x7 ~ "Settlement type/size (1-4)",
-                  x8 ~ "Cohabiting duration (in years)"
-                  )
-#how to report
+flabels <- list(x1 ~ "Sum ages of the couple (in years)",
+                x2 ~ "Difference of partners' ages (in years)",
+                x3 ~ "Sum education of the couple (2-14)",
+                x4 ~ "Difference of education of the partners (0-6)",
+                x5 ~ "Number of minors living with the couple (0- )",
+                x6 ~ "Financial status of the couple (1-5)",
+                x7 ~ "Settlement type/size (1-4)",
+                x8 ~ "Cohabiting duration (in years)",
+                
+                con_hb1 ~ "Tobacco use",
+                con_hb2 ~ "Covid-19 vaccination uptake",
+                con_hb3 ~ "Flu vaccination uptake",
+                con_hb4 ~ "Vegetable consumption",
+                con_hb5 ~ "Physical excercise",
+                con_hb6 ~ "Sleep problems",
+                con_hb7 ~ "Hypothetical vaccination \n uptake intetnion"
+                )
+
+  #how to report
   fstat <- list(all_continuous() ~ "{median} [{p25} — {p75}]")
+  
+  #which variables to report
+  stat_vars =   c("x1","x2","x3","x4","x5","x6","x7","x8",
+                  "con_hb1","con_hb2","con_hb3","con_hb4",
+                  "con_hb5","con_hb6","con_hb7")  
     
   tbl_summary(pc,
               label = flabels,
-              include = all_of(xvars),
+              include = all_of(stat_vars),
               statistic = fstat,
               digits = list(all_continuous() ~ c(0, 0))
               )
@@ -580,6 +625,8 @@ for (col in cols_fac) {
   attr(table2$chh, "label")    <- "Cohen's H 99% high"
   
   print(table2, digits = 2)
+  
+  write.csv(table2, file = "table2.csv", row.names = FALSE)
 #######################################################################################################
 
 
@@ -592,10 +639,9 @@ plot1 <- ggplot(table2, aes(x = reorder(label, -ch)))  +
   geom_point(aes(y = chl), color = "red") +
   geom_point(aes(y = chh), color = "red") +
   geom_segment(aes(x = reorder(label, -ch), xend = reorder(label, -ch), y = chl, yend = chh), color = "black") +
-  labs(x = "Health domain", y = "Cohen's H with 99% CI") +
+  labs(x = "Health domain", y = "Cohen's h' with 99% CI") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5,  size = 12))
   
 ggsave("plot1.png", plot = plot1)
 #######################################################################################################
-  
