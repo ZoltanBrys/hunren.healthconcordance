@@ -326,6 +326,7 @@ for (col in cols_fac) {
 
 #binarized tobacco use respondent and partner
   #levels(pc$H3)
+  #QUESTION:
   pc$rhb1 <- recode_bin( f =  pc$H3,
               ones = c("Dohányzom, de elektronikus eszközt (e-cigaretta, hevített dohánytermék) nem használok.", 
                        "Dohányzom és elektronikus eszközt (e-cigaretta, hevített dohánytermék) is használok.", 
